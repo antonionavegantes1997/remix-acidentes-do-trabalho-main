@@ -1,0 +1,1 @@
+ALTER TABLE public.acidentes ADD COLUMN IF NOT EXISTS cid text NOT NULL DEFAULT ''::text;
