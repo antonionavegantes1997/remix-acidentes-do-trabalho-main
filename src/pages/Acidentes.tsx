@@ -9,6 +9,7 @@ import { useAcidentes, useCreateAcidente, useUpdateAcidente, useDeleteAcidente, 
 import AcidenteFormDialog from "@/components/AcidenteFormDialog";
 import DashboardFilters, { DashboardFilterValues } from "@/components/DashboardFilters";
 import { toast } from "sonner";
+import { parseDate, formatDate } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 function parseCSV(text: string): Record<string, string>[] {
@@ -97,7 +98,7 @@ export default function Acidentes() {
 
   const filteredData = useMemo(() => {
     return data.filter(a => {
-      const d = new Date(a.data);
+      const d = parseDate(a.data);
       if (filters.ano !== "all" && d.getFullYear() !== Number(filters.ano)) return false;
       if (filters.mes !== "all" && d.getMonth() !== Number(filters.mes)) return false;
       if (filters.contrato !== "all" && a.contrato !== filters.contrato) return false;
@@ -227,7 +228,7 @@ export default function Acidentes() {
                     <TableCell>{a.rateio}</TableCell>
                     <TableCell>{a.regional}</TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {new Date(a.data).toLocaleDateString("pt-BR")}
+                      {formatDate(a.data)}
                       {a.hora ? ` ${a.hora.substring(0, 5)}` : ""}
                     </TableCell>
                     <TableCell>{a.turno_trabalho}</TableCell>
@@ -255,7 +256,7 @@ export default function Acidentes() {
                     <TableCell>{a.causas_imediatas_tasc}</TableCell>
                     <TableCell>{a.id_comunica_seguranca_eqtl}</TableCell>
                     <TableCell>{a.status_acidente}</TableCell>
-                    <TableCell>{a.data_retorno ? new Date(a.data_retorno).toLocaleDateString("pt-BR") : "-"}</TableCell>
+                    <TableCell>{a.data_retorno ? formatDate(a.data_retorno) : "-"}</TableCell>
                     <TableCell>
                       <Badge variant={a.situacao === "Ativo" ? "default" : "secondary"}>{a.situacao}</Badge>
                     </TableCell>

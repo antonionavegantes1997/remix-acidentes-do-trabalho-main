@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList } from "recharts";
 import { Acidente } from "@/hooks/use-acidentes";
 
 const COLORS = [
@@ -62,11 +62,22 @@ export default function DashboardCharts({ acidentes }: Props) {
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={porSexo} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={45} paddingAngle={2}>
+                <Pie
+                  data={porSexo}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  innerRadius={45}
+                  paddingAngle={2}
+                  labelLine={false}
+                >
                   {porSexo.map((e, i) => <Cell key={i} fill={e.fill} />)}
+                  <LabelList dataKey="value" position="inside" fill="#fff" style={{ fontSize: 12, fontWeight: 600 }} />
                 </Pie>
                 <Tooltip />
-                <Legend />
+                <Legend verticalAlign="bottom" align="center" layout="horizontal" iconType="circle" verticalAlign="bottom" align="center" layout="horizontal" iconType="circle" />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -79,9 +90,11 @@ export default function DashboardCharts({ acidentes }: Props) {
               <BarChart data={porDiaSemana}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="dia" fontSize={11} />
-                <YAxis fontSize={12} />
+                <YAxis tick={false} axisLine={false} tickLine={false} />
                 <Tooltip />
-                <Bar dataKey="total" fill="hsl(210, 79%, 46%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="total" fill="hsl(210, 79%, 46%)" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="total" position="top" />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -96,9 +109,11 @@ export default function DashboardCharts({ acidentes }: Props) {
               <BarChart data={porHora}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="hora" fontSize={10} interval={1} />
-                <YAxis fontSize={12} />
+                <YAxis tick={false} axisLine={false} tickLine={false} />
                 <Tooltip />
-                <Bar dataKey="total" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="total" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="total" position="top" />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -109,11 +124,22 @@ export default function DashboardCharts({ acidentes }: Props) {
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={porStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} innerRadius={45} paddingAngle={2}>
+                <Pie
+                  data={porStatus}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  innerRadius={45}
+                  paddingAngle={2}
+                  labelLine={false}
+                >
                   {porStatus.map((e, i) => <Cell key={i} fill={e.fill} />)}
+                  <LabelList dataKey="value" position="inside" fill="#fff" style={{ fontSize: 12, fontWeight: 600 }} />
                 </Pie>
                 <Tooltip />
-                <Legend />
+                <Legend verticalAlign="bottom" align="center" layout="horizontal" iconType="circle" />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

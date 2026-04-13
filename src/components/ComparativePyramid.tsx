@@ -12,8 +12,8 @@ function calcStats(acidentes: Acidente[]) {
   const total = acidentes.length;
   const fatal = acidentes.filter(a => a.tipologia_acidente === "ACIDENTE FATAL").length;
   const caf = acidentes.filter(a => a.afastamento === "COM AFASTAMENTO" && a.tipologia_acidente !== "ACIDENTE FATAL").length;
-  const saf = acidentes.filter(a => a.afastamento !== "COM AFASTAMENTO" && a.tipologia_acidente !== "ACIDENTE FATAL" && a.tipologia_acidente !== "ACIDENTE ATIPICO - PRIMEIROS SOCORROS").length;
-  const primeirosSocorros = acidentes.filter(a => a.tipologia_acidente === "ACIDENTE ATIPICO - PRIMEIROS SOCORROS").length;
+  const saf = 0;
+  const primeirosSocorros = acidentes.filter(a => a.tipologia_acidente !== "ACIDENTE TIPICO" && a.tipologia_acidente !== "ACIDENTE FATAL").length;
   return { total, fatal, caf, saf, primeirosSocorros };
 }
 

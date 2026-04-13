@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Calendar, TrendingUp, Loader2 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
 import { useAcidentes } from "@/hooks/use-acidentes";
 import { useEtapas, ETAPAS_CONFIG } from "@/hooks/use-etapas";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +17,12 @@ const TIPO_COLORS: Record<string, string> = {
   "Sinistro de Trânsito": "hsl(210, 79%, 46%)",
   "Primeiros Socorros": "hsl(145, 63%, 42%)",
 };
+const PIE_COLORS = [
+  "hsl(0, 65%, 38%)", "hsl(38, 92%, 50%)", "hsl(210, 79%, 46%)",
+  "hsl(145, 63%, 42%)", "hsl(280, 60%, 50%)", "hsl(330, 70%, 50%)",
+  "hsl(180, 60%, 40%)", "hsl(60, 80%, 45%)",
+  "hsl(10, 80%, 50%)", "hsl(275, 65%, 50%)"
+];
 const CONTRATO_COLORS = [
   "hsl(0, 65%, 38%)", "hsl(38, 92%, 50%)", "hsl(210, 79%, 46%)",
   "hsl(145, 63%, 42%)", "hsl(280, 60%, 50%)", "hsl(330, 70%, 50%)",
@@ -74,8 +80,10 @@ export default function Dashboard() {
   const tiposAcidente = useMemo(() => {
     const map: Record<string, number> = {};
     acidentes.forEach(a => { const t = a.tipologia_acidente || "Não informado"; map[t] = (map[t] || 0) + 1; });
-    return Object.entries(map).map(([tipo, total]) => ({
-      tipo, total, fill: TIPO_COLORS[tipo] || "hsl(0, 0%, 50%)",
+    return Object.entries(map).map(([tipo, total], index) => ({
+      tipo,
+      total,
+      fill: TIPO_COLORS[tipo] || PIE_COLORS[index % PIE_COLORS.length],
     }));
   }, [acidentes]);
 
@@ -89,6 +97,20 @@ export default function Dashboard() {
 
   const anoAtual = filters.ano !== "all" ? Number(filters.ano) : currentYear;
   const anoAnterior = anoAtual - 1;
+
+  function renderTipoAcidenteLegend(props: any) {
+    if (!props.payload) return null;
+    return (
+      <ul className="space-y-2 mt-2">
+        {props.payload.map((entry: any) => (
+          <li key={entry.value} className="flex items-center gap-2 text-sm text-foreground">
+            <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: entry.color }} />
+            <span>{entry.payload.total}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   if (isLoading || isLoadingEtapas) {
     return (
@@ -163,9 +185,11 @@ export default function Dashboard() {
               <BarChart data={acidentesPorMes}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="mes" fontSize={12} />
-                <YAxis fontSize={12} />
+                <YAxis tick={false} axisLine={false} tickLine={false} />
                 <Tooltip />
-                <Bar dataKey="total" fill="hsl(0, 65%, 38%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="total" fill="hsl(0, 65%, 38%)" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="total" position="top" />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -175,14 +199,34 @@ export default function Dashboard() {
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
-                <Pie data={tiposAcidente} dataKey="total" nameKey="tipo" cx="50%" cy="50%" outerRadius={100} innerRadius={50} paddingAngle={2}>
-                  {tiposAcidente.map((entry, index) => <Cell key={index} fill={entry.fill} />)}
+                <Pie
+                  data={tiposAcidente}
+                  dataKey="total"
+                  nameKey="tipo"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  innerRadius={50}
+                  paddingAngle={2}
+                  labelLine={false}
+                >
+                  {tiposAcidente.map((entry) => <Cell key={entry.tipo} fill={entry.fill} />)}
+                  <LabelList dataKey="total" position="inside" fill="#fff" style={{ fontSize: 12, fontWeight: 600 }} />
                 </Pie>
                 <Tooltip />
-                <Legend fontSize={12} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
+          <CardFooter className="pt-0">
+            <div className="grid gap-2 mt-2">
+              {tiposAcidente.map(entry => (
+                <div key={entry.tipo} className="flex items-center gap-2 text-sm text-foreground">
+                  <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: entry.fill }} />
+                  <span>{entry.tipo}</span>
+                </div>
+              ))}
+            </div>
+          </CardFooter>
         </Card>
       </div>
 
@@ -195,7 +239,7 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={acidentesPorContrato} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" fontSize={12} />
+              <XAxis type="number" tick={false} axisLine={false} tickLine={false} />
               <YAxis dataKey="contrato" type="category" fontSize={12} width={120} />
               <Tooltip />
               <Bar dataKey="total" radius={[0, 4, 4, 0]}>

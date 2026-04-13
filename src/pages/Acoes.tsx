@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { formatDate } from "@/lib/utils";
 import { Loader2, Upload, Paperclip, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -101,7 +102,6 @@ export default function Acoes() {
           preventiva: "Não",
           responsavel_execucao: "",
           data_prevista_execucao: null,
-          data_realizada_execucao: null,
           situacao_atual: "Aguardando análise",
         });
       }
@@ -227,7 +227,7 @@ function AcaoRowReadOnly({
         </Button>
       </TableCell>
       <TableCell className="font-medium">{row.nome}</TableCell>
-      <TableCell className="whitespace-nowrap">{new Date(row.data).toLocaleDateString("pt-BR")}</TableCell>
+      <TableCell className="whitespace-nowrap">{formatDate(row.data)}</TableCell>
       <TableCell className="text-xs font-semibold">{row.causaTipo}</TableCell>
       <TableCell className="max-w-[200px] text-xs">{row.causaDescricao}</TableCell>
       <TableCell colSpan={8} className="text-xs text-muted-foreground">
@@ -250,6 +250,21 @@ function AcaoRow({
   onEditAcidente: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [acaoText, setAcaoText] = useState(acao.acao);
+  const [corretivaValue, setCorretivaValue] = useState(acao.corretiva || "Não");
+  const [preventivaValue, setPreventivaValue] = useState(acao.preventiva || "Não");
+  const [responsavelValue, setResponsavelValue] = useState(acao.responsavel_execucao);
+  const [dataPrevistaValue, setDataPrevistaValue] = useState(acao.data_prevista_execucao || "");
+  const [situacaoValue, setSituacaoValue] = useState(acao.situacao_atual);
+
+  useEffect(() => {
+    setAcaoText(acao.acao);
+    setCorretivaValue(acao.corretiva || "Não");
+    setPreventivaValue(acao.preventiva || "Não");
+    setResponsavelValue(acao.responsavel_execucao);
+    setDataPrevistaValue(acao.data_prevista_execucao || "");
+    setSituacaoValue(acao.situacao_atual);
+  }, [acao.id, acao.acao, acao.corretiva, acao.preventiva, acao.responsavel_execucao, acao.data_prevista_execucao, acao.situacao_atual]);
 
   const handleField = (field: string, value: string) => {
     if (!canEdit) return;
@@ -280,14 +295,27 @@ function AcaoRow({
         </Button>
       </TableCell>
       <TableCell className="font-medium">{row.nome}</TableCell>
-      <TableCell className="whitespace-nowrap">{new Date(row.data).toLocaleDateString("pt-BR")}</TableCell>
+      <TableCell className="whitespace-nowrap">{formatDate(row.data)}</TableCell>
       <TableCell className="text-xs font-semibold">{row.causaTipo}</TableCell>
       <TableCell className="max-w-[200px] text-xs">{row.causaDescricao}</TableCell>
       <TableCell>
-        <Input className="min-w-[120px]" defaultValue={acao.acao} readOnly={!canEdit} onBlur={e => handleField("acao", e.target.value)} />
+        <Input
+          className="min-w-[120px]"
+          value={acaoText}
+          readOnly={!canEdit}
+          onBlur={e => handleField("acao", e.target.value)}
+          onChange={e => setAcaoText(e.target.value)}
+        />
       </TableCell>
       <TableCell>
-        <Select defaultValue={acao.corretiva || "Não"} onValueChange={v => handleField("corretiva", v)} disabled={!canEdit}>
+        <Select
+          value={corretivaValue}
+          onValueChange={v => {
+            setCorretivaValue(v);
+            handleField("corretiva", v);
+          }}
+          disabled={!canEdit}
+        >
           <SelectTrigger className="min-w-[120px]"><SelectValue placeholder="Selecione" /></SelectTrigger>
           <SelectContent>
             {TIPO_ACAO_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -295,7 +323,14 @@ function AcaoRow({
         </Select>
       </TableCell>
       <TableCell>
-        <Select defaultValue={acao.preventiva || "Não"} onValueChange={v => handleField("preventiva", v)} disabled={!canEdit}>
+        <Select
+          value={preventivaValue}
+          onValueChange={v => {
+            setPreventivaValue(v);
+            handleField("preventiva", v);
+          }}
+          disabled={!canEdit}
+        >
           <SelectTrigger className="min-w-[120px]"><SelectValue placeholder="Selecione" /></SelectTrigger>
           <SelectContent>
             {TIPO_ACAO_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -303,16 +338,33 @@ function AcaoRow({
         </Select>
       </TableCell>
       <TableCell>
-        <Input className="min-w-[140px]" defaultValue={acao.responsavel_execucao} readOnly={!canEdit} onBlur={e => handleField("responsavel_execucao", e.target.value)} />
+        <Input
+          className="min-w-[140px]"
+          value={responsavelValue}
+          readOnly={!canEdit}
+          onBlur={e => handleField("responsavel_execucao", e.target.value)}
+          onChange={e => setResponsavelValue(e.target.value)}
+        />
       </TableCell>
       <TableCell>
-        <Input type="date" className="min-w-[130px]" defaultValue={acao.data_prevista_execucao || ""} readOnly={!canEdit} onBlur={e => handleField("data_prevista_execucao", e.target.value)} />
+        <Input
+          type="date"
+          className="min-w-[130px]"
+          value={dataPrevistaValue}
+          readOnly={!canEdit}
+          onBlur={e => handleField("data_prevista_execucao", e.target.value)}
+          onChange={e => setDataPrevistaValue(e.target.value)}
+        />
       </TableCell>
       <TableCell>
-        <Input type="date" className="min-w-[130px]" defaultValue={acao.data_realizada_execucao || ""} readOnly={!canEdit} onBlur={e => handleField("data_realizada_execucao", e.target.value)} />
-      </TableCell>
-      <TableCell>
-        <Select defaultValue={acao.situacao_atual} onValueChange={v => handleField("situacao_atual", v)} disabled={!canEdit}>
+        <Select
+          value={situacaoValue}
+          onValueChange={v => {
+            setSituacaoValue(v);
+            handleField("situacao_atual", v);
+          }}
+          disabled={!canEdit}
+        >
           <SelectTrigger className="min-w-[140px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             {SITUACAO_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}

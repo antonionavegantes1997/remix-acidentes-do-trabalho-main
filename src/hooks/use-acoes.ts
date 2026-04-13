@@ -12,7 +12,6 @@ export interface Acao {
   preventiva: string;
   responsavel_execucao: string;
   data_prevista_execucao: string | null;
-  data_realizada_execucao: string | null;
   situacao_atual: string;
   created_at: string;
   updated_at: string;
@@ -65,7 +64,7 @@ export function useUpdateAcao() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["acoes"] }); toast.success("Ação atualizada!"); },
-    onError: () => toast.error("Erro ao atualizar ação."),
+    onError: (error: any) => toast.error(error?.message ?? "Erro ao atualizar ação."),
   });
 }
 
@@ -78,7 +77,7 @@ export function useCreateAcao() {
       return data;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["acoes"] }); },
-    onError: () => toast.error("Erro ao criar ação."),
+    onError: (error: any) => toast.error(error?.message ?? "Erro ao criar ação."),
   });
 }
 

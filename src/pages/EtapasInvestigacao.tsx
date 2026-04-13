@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { useAcidentes } from "@/hooks/use-acidentes";
 import { useEtapas, useCreateEtapa, useUpdateEtapa, ETAPAS_CONFIG, EtapaInvestigacao } from "@/hooks/use-etapas";
 import DashboardFilters, { DashboardFilterValues } from "@/components/DashboardFilters";
+import { parseDate, formatDate } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 function isLate(acidenteData: string, etapaDate: string | null, prazoHoras: number | null): boolean | null {
   if (!prazoHoras || !etapaDate) return null;
-  const acDate = new Date(acidenteData);
-  const etDate = new Date(etapaDate);
+  const acDate = parseDate(acidenteData);
+  const etDate = parseDate(etapaDate);
   const diffMs = etDate.getTime() - acDate.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
   return diffHours > prazoHoras;
@@ -32,7 +33,7 @@ export default function EtapasInvestigacao() {
 
   const acidentes = useMemo(() => {
     return allAcidentes.filter(a => {
-      const d = new Date(a.data);
+      const d = parseDate(a.data);
       if (filters.ano !== "all" && d.getFullYear() !== Number(filters.ano)) return false;
       if (filters.mes !== "all" && d.getMonth() !== Number(filters.mes)) return false;
       if (filters.contrato !== "all" && a.contrato !== filters.contrato) return false;
@@ -110,7 +111,7 @@ export default function EtapasInvestigacao() {
                       <TableRow key={a.id}>
                         <TableCell className="font-medium sticky left-0 bg-background z-10">{a.nome}</TableCell>
                         <TableCell className="whitespace-nowrap">
-                          {new Date(a.data).toLocaleDateString("pt-BR")}
+                          {formatDate(a.data)}
                           {a.hora ? ` ${a.hora.substring(0, 5)}` : ""}
                         </TableCell>
                         <TableCell colSpan={ETAPAS_CONFIG.length} className="text-xs text-muted-foreground">
@@ -158,7 +159,7 @@ function EtapaRow({
     <TableRow>
       <TableCell className="font-medium sticky left-0 bg-background z-10">{nome}</TableCell>
       <TableCell className="whitespace-nowrap">
-        {new Date(dataAcidente).toLocaleDateString("pt-BR")}
+        {formatDate(dataAcidente)}
         {horaAcidente ? ` ${horaAcidente.substring(0, 5)}` : ""}
       </TableCell>
       {ETAPAS_CONFIG.map(cfg => {
