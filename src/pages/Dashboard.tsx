@@ -95,6 +95,20 @@ export default function Dashboard() {
       .sort((a, b) => b.total - a.total);
   }, [acidentes]);
 
+  const transitoResponsabilidades = useMemo(() => {
+    const map: Record<string, number> = {};
+    acidentes.forEach(a => {
+      if (a.transito_responsabilidades) {
+        map[a.transito_responsabilidades] = (map[a.transito_responsabilidades] || 0) + 1;
+      }
+    });
+    return Object.entries(map).map(([responsabilidade, total], index) => ({
+      responsabilidade,
+      total,
+      fill: PIE_COLORS[index % PIE_COLORS.length],
+    }));
+  }, [acidentes]);
+
   const anoAtual = filters.ano !== "all" ? Number(filters.ano) : currentYear;
   const anoAnterior = anoAtual - 1;
 
@@ -249,6 +263,43 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      {transitoResponsabilidades.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Trânsito Responsabilidades (NP077)</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={transitoResponsabilidades}
+                  dataKey="total"
+                  nameKey="responsabilidade"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  innerRadius={50}
+                  paddingAngle={2}
+                  labelLine={false}
+                >
+                  {transitoResponsabilidades.map((entry) => <Cell key={entry.responsabilidade} fill={entry.fill} />)}
+                  <LabelList dataKey="total" position="inside" fill="#fff" style={{ fontSize: 12, fontWeight: 600 }} />
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+          <CardFooter className="pt-0">
+            <div className="grid gap-2 mt-2">
+              {transitoResponsabilidades.map(entry => (
+                <div key={entry.responsabilidade} className="flex items-center gap-2 text-sm text-foreground">
+                  <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: entry.fill }} />
+                  <span>{entry.responsabilidade}</span>
+                </div>
+              ))}
+            </div>
+          </CardFooter>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

@@ -102,6 +102,7 @@ export default function Acoes() {
           preventiva: "Não",
           responsavel_execucao: "",
           data_prevista_execucao: null,
+          data_realizada_execucao: null,
           situacao_atual: "Aguardando análise",
         });
       }
@@ -255,6 +256,7 @@ function AcaoRow({
   const [preventivaValue, setPreventivaValue] = useState(acao.preventiva || "Não");
   const [responsavelValue, setResponsavelValue] = useState(acao.responsavel_execucao);
   const [dataPrevistaValue, setDataPrevistaValue] = useState(acao.data_prevista_execucao || "");
+  const [dataRealizadaValue, setDataRealizadaValue] = useState(acao.data_realizada_execucao || "");
   const [situacaoValue, setSituacaoValue] = useState(acao.situacao_atual);
 
   useEffect(() => {
@@ -263,8 +265,9 @@ function AcaoRow({
     setPreventivaValue(acao.preventiva || "Não");
     setResponsavelValue(acao.responsavel_execucao);
     setDataPrevistaValue(acao.data_prevista_execucao || "");
+    setDataRealizadaValue(acao.data_realizada_execucao || "");
     setSituacaoValue(acao.situacao_atual);
-  }, [acao.id, acao.acao, acao.corretiva, acao.preventiva, acao.responsavel_execucao, acao.data_prevista_execucao, acao.situacao_atual]);
+  }, [acao.id, acao.acao, acao.corretiva, acao.preventiva, acao.responsavel_execucao, acao.data_prevista_execucao, acao.data_realizada_execucao, acao.situacao_atual]);
 
   const handleField = (field: string, value: string) => {
     if (!canEdit) return;
@@ -354,6 +357,16 @@ function AcaoRow({
           readOnly={!canEdit}
           onBlur={e => handleField("data_prevista_execucao", e.target.value)}
           onChange={e => setDataPrevistaValue(e.target.value)}
+        />
+      </TableCell>
+      <TableCell>
+        <Input
+          type="date"
+          className="min-w-[130px]"
+          value={dataRealizadaValue}
+          readOnly={!canEdit}
+          onBlur={e => handleField("data_realizada_execucao", e.target.value)}
+          onChange={e => setDataRealizadaValue(e.target.value)}
         />
       </TableCell>
       <TableCell>

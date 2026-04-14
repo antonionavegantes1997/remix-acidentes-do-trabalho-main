@@ -55,7 +55,7 @@ const AFASTAMENTO_OPTIONS = ["COM AFASTAMENTO", "SEM AFASTAMENTO"];
 const GRAVIDADE_LESAO_OPTIONS = ["FATAL", "GRAVE", "MODERADA", "LEVE", "ALTO POTENCIAL", "SEM LESÃO", "PRIMEIROS SOCORROS"];
 const GRAVIDADE_ACIDENTE_OPTIONS = ["GRAVE", "LEVE"];
 const SEXO_OPTIONS = ["MASCULINO", "FEMININO"];
-const STATUS_OPTIONS = ["AFASTADO", "TRATAMENTO MÉDICO", "DESLOCADO PARA ATIVIDADE COMPATÍVEL", "JÁ RETORNOU AS ATIVIDADES"];
+const STATUS_OPTIONS = ["AFASTADO", "TRATAMENTO MÉDICO", "DESLOCADO PARA ATIVIDADE COMPATÍVEL", "JÁ RETORNOU AS ATIVIDADES", "NÃO AFASTADO"];
 const FATALIDADE_OPTIONS = ["FATAL", "NÃO"];
 
 const NATUREZA_ACIDENTE_OPTIONS = [
@@ -269,6 +269,32 @@ function SelectField({ label, value, onChange, options, placeholder = "Selecione
   );
 }
 
+function MultiSelectField({ label, value, onChange, options, placeholder = "Selecione", className = "", labelClassName = "" }: {
+  label: string; value: string; onChange: (v: string) => void; options: string[]; placeholder?: string; className?: string; labelClassName?: string;
+}) {
+  const selectedValues = value ? value.split(",").filter(Boolean) : [];
+
+  return (
+    <div className={`space-y-1.5 ${className}`}>
+      <Label className={labelClassName}>{label}</Label>
+      <select
+        multiple
+        size={Math.min(options.length, 4)}
+        className="w-full max-h-36 min-h-[40px] rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        value={selectedValues}
+        onChange={e => {
+          const selected = Array.from(e.target.selectedOptions).map(option => option.value);
+          onChange(selected.join(","));
+        }}
+      >
+        {options.map(o => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function TextField({ label, id, value, onChange, type = "text", required = false, className = "", labelClassName = "" }: {
   label: string; id: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; className?: string; labelClassName?: string;
 }) {
@@ -411,7 +437,7 @@ export default function AcidenteFormDialog({ open, onOpenChange, editing, onSubm
             <TextField label="ID - Comunica Segurança EQTL" id="id_comunica" value={form.id_comunica_seguranca_eqtl} onChange={set("id_comunica_seguranca_eqtl")} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <SelectField label="Trânsito Responsabilidades" value={form.transito_responsabilidades} onChange={set("transito_responsabilidades")} options={TRANSITO_RESP_OPTIONS} />
+            <SelectField label="Trânsito Responsabilidades (NP077)" value={form.transito_responsabilidades} onChange={set("transito_responsabilidades")} options={TRANSITO_RESP_OPTIONS} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="descricao">Descrição</Label>
@@ -421,7 +447,7 @@ export default function AcidenteFormDialog({ open, onOpenChange, editing, onSubm
           {/* Parte do Corpo */}
           <div className="grid grid-cols-2 gap-3">
             <SelectField label="Parte do Corpo Atingida (NBR14280)" value={form.parte_corpo_atingida} onChange={(v) => { set("parte_corpo_atingida")(v); set("subdivisao_parte_corpo")(""); }} options={PARTE_CORPO_OPTIONS} />
-            <SelectField label="Subdivisão Parte do Corpo (NBR14280)" value={form.subdivisao_parte_corpo} onChange={set("subdivisao_parte_corpo")} options={subdivisaoOptions} placeholder={subdivisaoOptions.length ? "Selecione" : "Selecione parte do corpo primeiro"} />
+            <MultiSelectField label="Subdivisão Parte do Corpo (NBR14280)" value={form.subdivisao_parte_corpo} onChange={set("subdivisao_parte_corpo")} options={subdivisaoOptions} placeholder={subdivisaoOptions.length ? "Selecione" : "Selecione parte do corpo primeiro"} />
           </div>
 
           {/* Afastamento e Gravidade */}
@@ -466,11 +492,11 @@ export default function AcidenteFormDialog({ open, onOpenChange, editing, onSubm
 
           {/* Responsáveis e Status */}
           <div className="grid grid-cols-2 gap-3">
-            <TextField label="Nome do Gestor" id="gestor" value={form.nome_gestor} onChange={set("nome_gestor")} />
-            <TextField label="Nome do Responsável" id="responsavel" value={form.nome_responsavel} onChange={set("nome_responsavel")} />
+            <TextField label="Gerência" id="gestor" value={form.nome_gestor} onChange={set("nome_gestor")} />
+            <TextField label="Líder" id="responsavel" value={form.nome_responsavel} onChange={set("nome_responsavel")} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <SelectField label="Status Acidente" value={form.status_acidente} onChange={set("status_acidente")} options={STATUS_OPTIONS} />
+            <SelectField label="Status do Acidentado" value={form.status_acidente} onChange={set("status_acidente")} options={STATUS_OPTIONS} />
             <TextField label="Data de Retorno" id="data_retorno" value={form.data_retorno} onChange={set("data_retorno")} type="date" />
           </div>
 
