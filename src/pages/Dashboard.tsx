@@ -152,6 +152,25 @@ export default function Dashboard() {
     return result;
   }, [acoes]);
 
+  const etapasInvestigacaoData = useMemo(() => {
+    const map: Record<string, number> = {};
+    acidentes.forEach((acidente) => {
+      const label = etapaLabelPorAcidente.map[acidente.id] || "Não iniciada";
+      map[label] = (map[label] || 0) + 1;
+    });
+
+    return Object.entries(map)
+      .map(([etapa, total]) => ({ etapa, total }))
+      .sort((a, b) => {
+        const getOrder = (label: string) => {
+          if (label === "Não iniciada") return 0;
+          const match = label.match(/^(\d+)\)/);
+          return match ? Number(match[1]) : 999;
+        };
+        return getOrder(a.etapa) - getOrder(b.etapa);
+      });
+  }, [acidentes, etapaLabelPorAcidente]);
+
   const anoAtual = filters.ano !== "all" ? Number(filters.ano) : currentYear;
   const anoAnterior = anoAtual - 1;
 
@@ -379,6 +398,25 @@ export default function Dashboard() {
               ))}
             </div>
           </CardFooter>
+        </Card>
+      )}
+
+      {etapasInvestigacaoData.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Etapas de Investigação</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={etapasInvestigacaoData} layout="vertical" margin={{ left: 16, right: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tick={false} axisLine={false} tickLine={false} />
+                <YAxis dataKey="etapa" type="category" width={360} fontSize={12} />
+                <Tooltip />
+                <Bar dataKey="total" fill="hsl(210, 79%, 46%)" radius={[0, 4, 4, 0]}>
+                  <LabelList dataKey="total" position="right" fill="#000000" />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
         </Card>
       )}
 
