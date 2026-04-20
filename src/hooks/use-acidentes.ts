@@ -60,6 +60,21 @@ export interface Acidente {
 
 export type AcidenteInput = Omit<Acidente, "id" | "created_at" | "situacao">;
 
+type SupabaseLikeError = { message?: string; details?: string; hint?: string };
+
+function extractMissingColumn(error: unknown) {
+  const e = (error ?? {}) as SupabaseLikeError;
+  const text = `${e.message ?? ""} ${e.details ?? ""} ${e.hint ?? ""}`;
+  const match = text.match(/Could not find the '([^']+)' column/i);
+  return match?.[1] ?? null;
+}
+
+function omitKeyFromRecord<T extends Record<string, unknown>>(record: T, key: string) {
+  if (!(key in record)) return record;
+  const { [key]: _removed, ...rest } = record;
+  return rest;
+}
+
 async function logAudit(acidenteId: string, action: string, changes: Record<string, unknown> = {}) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -117,9 +132,22 @@ export function useCreateAcidente() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (a: AcidenteInput) => {
-      const dataToInsert = { ...a, nome_empresa: "CGB", situacao: "Ativo" } as Omit<Acidente, "id" | "created_at">;
-      const { data, error } = await supabase.from("acidentes").insert(dataToInsert).select().single();
-      if (error) throw error;
+      let dataToInsert = { ...a, nome_empresa: "CGB", situacao: "Ativo" } as Record<string, unknown>;
+      let data: Acidente | null = null;
+      let error: unknown = null;
+
+      for (let i = 0; i < 10; i++) {
+        const result = await supabase.from("acidentes").insert(dataToInsert).select().single();
+        data = result.data as Acidente | null;
+        error = result.error;
+        if (!error) break;
+
+        const missingColumn = extractMissingColumn(error);
+        if (!missingColumn || !(missingColumn in dataToInsert)) break;
+        dataToInsert = omitKeyFromRecord(dataToInsert, missingColumn);
+      }
+
+      if (error || !data) throw error ?? new Error("Erro ao registrar.");
       await logAudit(data.id, "create");
       return data;
     },
@@ -132,9 +160,23 @@ export function useUpdateAcidente() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...a }: AcidenteInput & { id: string }) => {
-      const { data, error } = await supabase.from("acidentes").update(a as Partial<Acidente>).eq("id", id).select().single();
+      let updates = a as Record<string, unknown>;
+      let data: Acidente | null = null;
+      let error: unknown = null;
+
+      for (let i = 0; i < 10; i++) {
+        const result = await supabase.from("acidentes").update(updates as Partial<Acidente>).eq("id", id).select().single();
+        data = result.data as Acidente | null;
+        error = result.error;
+        if (!error) break;
+
+        const missingColumn = extractMissingColumn(error);
+        if (!missingColumn || !(missingColumn in updates)) break;
+        updates = omitKeyFromRecord(updates, missingColumn);
+      }
+
       if (error) throw error;
-      await logAudit(id, "update", a as Record<string, unknown>);
+      await logAudit(id, "update", updates);
       return data;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["acidentes"] }); toast.success("Atualizado!"); },
@@ -146,9 +188,22 @@ export function useBulkCreateAcidentes() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (acidentes: AcidenteInput[]) => {
-      const rows = acidentes.map(a => ({ ...a, situacao: "Ativo" } as Omit<Acidente, "id" | "created_at">));
-      const { data, error } = await supabase.from("acidentes").insert(rows).select();
-      if (error) throw error;
+      let rows = acidentes.map(a => ({ ...a, situacao: "Ativo" } as Record<string, unknown>));
+      let data: Acidente[] | null = null;
+      let error: unknown = null;
+
+      for (let i = 0; i < 10; i++) {
+        const result = await supabase.from("acidentes").insert(rows).select();
+        data = result.data as Acidente[] | null;
+        error = result.error;
+        if (!error) break;
+
+        const missingColumn = extractMissingColumn(error);
+        if (!missingColumn || !rows.some((row) => missingColumn in row)) break;
+        rows = rows.map((row) => omitKeyFromRecord(row, missingColumn));
+      }
+
+      if (error || !data) throw error ?? new Error("Erro ao importar.");
       return data;
     },
     onSuccess: (data) => { qc.invalidateQueries({ queryKey: ["acidentes"] }); toast.success(`${data.length} importados!`); },

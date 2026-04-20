@@ -6,7 +6,7 @@ import { useAcidentes } from "@/hooks/use-acidentes";
 import { useEtapas, ETAPAS_CONFIG } from "@/hooks/use-etapas";
 import { useAcoes } from "@/hooks/use-acoes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDate } from "@/lib/utils";
+import { formatDate, parseDate } from "@/lib/utils";
 
 import ComparativePyramid from "@/components/ComparativePyramid";
 import DashboardFilters, { DashboardFilterValues } from "@/components/DashboardFilters";
@@ -37,13 +37,14 @@ export default function Dashboard() {
   const { data: acoes = [], isLoading: isLoadingAcoes } = useAcoes();
   const currentYear = new Date().getFullYear();
   const [filters, setFilters] = useState<DashboardFilterValues>({
-    ano: String(currentYear), mes: "all", contrato: "all", rateio: "all", tipo: "all",
+    ano: "all", mes: "all", contrato: "all", rateio: "all", tipo: "all",
     chapa: "", colaborador: "",
   });
 
   const acidentes = useMemo(() => {
     return allAcidentes.filter(a => {
-      const d = new Date(a.data);
+      const d = parseDate(a.data);
+      if (Number.isNaN(d.getTime())) return false;
       if (filters.ano !== "all" && d.getFullYear() !== Number(filters.ano)) return false;
       if (filters.mes !== "all" && d.getMonth() !== Number(filters.mes)) return false;
       if (filters.contrato !== "all" && a.contrato !== filters.contrato) return false;
@@ -81,7 +82,10 @@ export default function Dashboard() {
 
   const acidentesPorMes = useMemo(() => {
     const counts = new Array(12).fill(0);
-    acidentes.forEach(a => counts[new Date(a.data).getMonth()]++);
+    acidentes.forEach(a => {
+      const d = parseDate(a.data);
+      if (!Number.isNaN(d.getTime())) counts[d.getMonth()]++;
+    });
     return MESES.map((mes, i) => ({ mes, total: counts[i] }));
   }, [acidentes]);
 

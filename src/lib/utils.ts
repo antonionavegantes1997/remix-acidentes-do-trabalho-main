@@ -11,6 +11,10 @@ export function parseDate(value?: string | null): Date {
     const [year, month, day] = value.split("-").map(Number);
     return new Date(year, month - 1, day);
   }
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+    const [day, month, year] = value.split("/").map(Number);
+    return new Date(year, month - 1, day);
+  }
   return new Date(value);
 }
 
