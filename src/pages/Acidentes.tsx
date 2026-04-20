@@ -26,7 +26,7 @@ function parseCSV(text: string): Record<string, string>[] {
 
 function mapRowToInput(r: Record<string, string>): AcidenteInput {
   return {
-    nome_empresa: r["nome da empresa"] || "",
+    nome_empresa: "CGB",
     chapa: Number(r["chapa"] || 0),
     nome: r["nome"] || "",
     cargo: r["cargo"] || "",
@@ -218,7 +218,7 @@ export default function Acidentes() {
               <TableBody>
                 {filteredData.map(a => (
                   <TableRow key={a.id}>
-                    <TableCell>{a.nome_empresa}</TableCell>
+                    <TableCell>CGB</TableCell>
                     <TableCell className="font-mono">{a.chapa}</TableCell>
                     <TableCell>{a.nome}</TableCell>
                     <TableCell>{a.cargo}</TableCell>

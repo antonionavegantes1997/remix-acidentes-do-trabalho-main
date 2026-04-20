@@ -53,10 +53,60 @@ const TIPO_EVENTO_OPTIONS = [
 ];
 const AFASTAMENTO_OPTIONS = ["COM AFASTAMENTO", "SEM AFASTAMENTO"];
 const GRAVIDADE_LESAO_OPTIONS = ["FATAL", "GRAVE", "MODERADA", "LEVE", "ALTO POTENCIAL", "SEM LESÃO", "PRIMEIROS SOCORROS"];
-const GRAVIDADE_ACIDENTE_OPTIONS = ["GRAVE", "LEVE"];
+const GRAVIDADE_ACIDENTE_OPTIONS = [
+  "4.14.1 Acidente grave - Evento acidental no qual o acidentado sofreu lesões que resultaram em limitações de caráter permanente total, perda de membro ou perturbação funcional como amputações ou esmagamentos, perda de visão, lesão ou doença que leve a perda permanente de funções orgânicas (por exemplo: perda auditiva)",
+  "4.14.2 Acidente leve – Evento acidental com lesão não enquadrada como grave"
+];
 const SEXO_OPTIONS = ["MASCULINO", "FEMININO"];
 const STATUS_OPTIONS = ["AFASTADO", "TRATAMENTO MÉDICO", "DESLOCADO PARA ATIVIDADE COMPATÍVEL", "JÁ RETORNOU AS ATIVIDADES", "NÃO AFASTADO"];
 const FATALIDADE_OPTIONS = ["FATAL", "NÃO"];
+
+const DIAS_DEBITADOS_OPTIONS = [
+  "N/A",
+  "Gravidade Máxima",
+  "Morte: 6.000 dias",
+  "Incapacidade permanente total: 6.000 dias",
+  "Membros Superiores",
+  "Braço (do cotovelo ao ombro): 4.500 dias",
+  "Antebraço (do punho ao cotovelo): 3.600 dias",
+  "Mão (no punho/carpo): 3.000 dias",
+  "Polegar (Metacarpiano): 900 dias",
+  "Polegar (1ª falange - proximal): 600 dias",
+  "Polegar (2ª falange - distal): 300 dias",
+  "Indicador (Metacarpiano): 600 dias",
+  "Indicador (1ª falange): 400 dias",
+  "Indicador (2ª falange): 200 dias",
+  "Indicador (3ª falange): 100 dias",
+  "Dedo Médio (Metacarpiano): 500 dias",
+  "Dedo Médio (1ª falange): 300 dias",
+  "Dedo Médio (2ª falange): 150 dias",
+  "Dedo Médio (3ª falange): 75 dias",
+  "Dedo Anular (Metacarpiano): 450 dias",
+  "Dedo Anular (1ª falange): 240 dias",
+  "Dedo Anular (2ª falange): 120 dias",
+  "Dedo Anular (3ª falange): 60 dias",
+  "Dedo Mínimo (Metacarpiano): 400 dias",
+  "Dedo Mínimo (1ª falange): 200 dias",
+  "Dedo Mínimo (2ª falange): 100 dias",
+  "Dedo Mínimo (3ª falange): 50 dias",
+  "Membros Inferiores",
+  "Perna (acima do joelho): 4.500 dias",
+  "Perna (tornozelo ao joelho): 3.000 dias",
+  "Pé (no tornozelo/tarso): 2.400 dias",
+  "Hálux/Dedo Grande (Metatarsiano): 600 dias",
+  "Hálux (1ª falange): 300 dias",
+  "Hálux (2ª falange): 150 dias",
+  "Outros Dedos do Pé (Metatarsiano): 350 dias",
+  "Outros Dedos do Pé (1ª falange): 150 dias",
+  "Outros Dedos do Pé (2ª falange): 75 dias",
+  "Outros Dedos do Pé (3ª falange): 35 dias",
+  "Sentidos e Funções",
+  "Visão de ambos os olhos: 6.000 dias",
+  "Visão de apenas um olho: 1.800 dias",
+  "Audição de ambos os ouvidos: 3.000 dias",
+  "Audição de apenas um ouvido: 600 dias"
+];
+
 
 const NATUREZA_ACIDENTE_OPTIONS = [
   "Escoriação, abrasão (atrito)",
@@ -167,7 +217,7 @@ const CAUSAS_IMEDIATAS_CONDICOES = [
 ];
 
 const emptyForm: Record<string, string> = {
-  nome_empresa: "", chapa: "", nome: "", cargo: "", sexo: "", idade: "",
+  nome_empresa: "CGB", chapa: "", nome: "", cargo: "", sexo: "", idade: "",
   escolaridade: "", tempo_empresa: "", tempo_funcao: "", rateio: "", contrato: "",
   regional: "", estado: "", data: "", hora: "", turno_trabalho: "", dia_semana: "",
   horas_trabalhadas: "", municipio: "", zona: "", tipologia_acidente: "",
@@ -177,6 +227,9 @@ const emptyForm: Record<string, string> = {
   tarefa_executada: "", tipo_evento: "",
   causas_basicas_tasc: "", causas_basicas_tasc_1: "", causas_basicas_tasc_2: "",
   causas_imediatas_tasc: "", causas_imediatas_tasc_1: "", causas_imediatas_tasc_2: "",
+  info_causas_imediatas_tasc: "",
+  info_causas_imediatas_tasc_1: "",
+  info_causas_imediatas_tasc_2: "",
   nome_gestor: "", nome_responsavel: "", fatalidade: "",
   status_acidente: "", data_retorno: "", origem_fonte: "", id_comunica_seguranca_eqtl: "",
   transito_responsabilidades: "", parte_corpo_atingida: "", subdivisao_parte_corpo: "",
@@ -202,8 +255,11 @@ function acidenteToForm(a: Acidente): Record<string, string> {
     causas_basicas_tasc_1: a.causas_basicas_tasc_1 || "",
     causas_basicas_tasc_2: a.causas_basicas_tasc_2 || "",
     causas_imediatas_tasc: a.causas_imediatas_tasc || "",
-    causas_imediatas_tasc_1: (a as any).causas_imediatas_tasc_1 || "",
-    causas_imediatas_tasc_2: (a as any).causas_imediatas_tasc_2 || "",
+    causas_imediatas_tasc_1: (a as unknown as Record<string, string>).causas_imediatas_tasc_1 || "",
+    causas_imediatas_tasc_2: (a as unknown as Record<string, string>).causas_imediatas_tasc_2 || "",
+    info_causas_imediatas_tasc: (a as unknown as Record<string, string>).info_causas_imediatas_tasc || "",
+    info_causas_imediatas_tasc_1: (a as unknown as Record<string, string>).info_causas_imediatas_tasc_1 || "",
+    info_causas_imediatas_tasc_2: (a as unknown as Record<string, string>).info_causas_imediatas_tasc_2 || "",
     nome_gestor: a.nome_gestor || "", nome_responsavel: a.nome_responsavel || "",
     fatalidade: a.fatalidade, status_acidente: a.status_acidente,
     data_retorno: a.data_retorno || "",
@@ -212,13 +268,13 @@ function acidenteToForm(a: Acidente): Record<string, string> {
     transito_responsabilidades: a.transito_responsabilidades || "",
     parte_corpo_atingida: a.parte_corpo_atingida || "",
     subdivisao_parte_corpo: a.subdivisao_parte_corpo || "",
-    cid: (a as any).cid || "",
+    cid: (a as unknown as Record<string, string>).cid || "",
   };
 }
 
 function formToInput(f: Record<string, string>): AcidenteInput {
   return {
-    nome_empresa: f.nome_empresa, chapa: Number(f.chapa) || 0, nome: f.nome, cargo: f.cargo,
+    nome_empresa: "CGB", chapa: Number(f.chapa) || 0, nome: f.nome, cargo: f.cargo,
     sexo: f.sexo, idade: f.idade ? Number(f.idade) : null, escolaridade: f.escolaridade,
     tempo_empresa: f.tempo_empresa, tempo_funcao: f.tempo_funcao, rateio: f.rateio,
     contrato: f.contrato, regional: f.regional, estado: f.estado, data: f.data,
@@ -237,6 +293,9 @@ function formToInput(f: Record<string, string>): AcidenteInput {
     causas_imediatas_tasc: f.causas_imediatas_tasc,
     causas_imediatas_tasc_1: f.causas_imediatas_tasc_1,
     causas_imediatas_tasc_2: f.causas_imediatas_tasc_2,
+    info_causas_imediatas_tasc: f.info_causas_imediatas_tasc,
+    info_causas_imediatas_tasc_1: f.info_causas_imediatas_tasc_1,
+    info_causas_imediatas_tasc_2: f.info_causas_imediatas_tasc_2,
     nome_gestor: f.nome_gestor, nome_responsavel: f.nome_responsavel,
     fatalidade: f.fatalidade, status_acidente: f.status_acidente,
     data_retorno: f.data_retorno || null,
@@ -244,7 +303,7 @@ function formToInput(f: Record<string, string>): AcidenteInput {
     transito_responsabilidades: f.transito_responsabilidades,
     parte_corpo_atingida: f.parte_corpo_atingida, subdivisao_parte_corpo: f.subdivisao_parte_corpo,
     cid: f.cid,
-  } as any;
+  } as AcidenteInput;
 }
 
 interface Props {
@@ -385,7 +444,10 @@ export default function AcidenteFormDialog({ open, onOpenChange, editing, onSubm
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Empresa e Identificação */}
           <div className="grid grid-cols-3 gap-3">
-            <TextField label="Nome da Empresa" id="nome_empresa" value={form.nome_empresa} onChange={set("nome_empresa")} />
+            <div className="space-y-1.5">
+              <Label htmlFor="nome_empresa">Nome da Empresa</Label>
+              <Input id="nome_empresa" value="CGB" readOnly className="bg-muted/50 cursor-not-allowed" />
+            </div>
             <TextField label="Chapa" id="chapa" value={form.chapa} onChange={set("chapa")} type="number" required />
             <TextField label="Nome" id="nome" value={form.nome} onChange={set("nome")} required />
           </div>
@@ -454,7 +516,8 @@ export default function AcidenteFormDialog({ open, onOpenChange, editing, onSubm
           <div className="grid grid-cols-3 gap-3">
             <SelectField label="Afastamento" value={form.afastamento} onChange={set("afastamento")} options={AFASTAMENTO_OPTIONS} />
             <TextField label="Dias Perdidos" id="dias_perdidos" value={form.dias_perdidos} onChange={set("dias_perdidos")} type="number" />
-            <TextField label="Dias Debitados" id="dias_debitados" value={form.dias_debitados} onChange={set("dias_debitados")} type="number" />
+            <SelectField label="Dias Debitados" value={form.dias_debitados} onChange={set("dias_debitados")} options={DIAS_DEBITADOS_OPTIONS} />
+
           </div>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
             <TextField label="Nº CAT" id="cat" value={form.numero_cat} onChange={set("numero_cat")} className="md:col-span-3" />
@@ -478,16 +541,48 @@ export default function AcidenteFormDialog({ open, onOpenChange, editing, onSubm
 
           {/* Causas Imediatas TASC - 3 columns */}
           <div className="grid grid-cols-3 gap-3">
-            <GroupedCausasImediatasSelect label="Causas Imediatas (TASC)" value={form.causas_imediatas_tasc} onChange={set("causas_imediatas_tasc")} />
-            <GroupedCausasImediatasSelect label="Causas Imediatas (TASC) 1" value={form.causas_imediatas_tasc_1} onChange={set("causas_imediatas_tasc_1")} />
-            <GroupedCausasImediatasSelect label="Causas Imediatas (TASC) 2" value={form.causas_imediatas_tasc_2} onChange={set("causas_imediatas_tasc_2")} />
+            <GroupedCausasImediatasSelect label="Causas Imediatas (TASC) 1" value={form.causas_imediatas_tasc} onChange={set("causas_imediatas_tasc")} />
+            <GroupedCausasImediatasSelect label="Causas Imediatas (TASC) 2" value={form.causas_imediatas_tasc_1} onChange={set("causas_imediatas_tasc_1")} />
+            <GroupedCausasImediatasSelect label="Causas Imediatas (TASC) 3" value={form.causas_imediatas_tasc_2} onChange={set("causas_imediatas_tasc_2")} />
+          </div>
+
+          {/* Informações sobre Causas Imediatas - 3 columns */}
+          <div className="grid grid-cols-3 gap-3 mt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="info_causas_1">Informações sobre Causa Imediata (TASC) 1</Label>
+              <Textarea id="info_causas_1" value={form.info_causas_imediatas_tasc} onChange={e => set("info_causas_imediatas_tasc")(e.target.value)} rows={3} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="info_causas_2">Informações sobre Causa Imediata (TASC) 2</Label>
+              <Textarea id="info_causas_2" value={form.info_causas_imediatas_tasc_1} onChange={e => set("info_causas_imediatas_tasc_1")(e.target.value)} rows={3} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="info_causas_3">Informações sobre Causa Imediata (TASC) 3</Label>
+              <Textarea id="info_causas_3" value={form.info_causas_imediatas_tasc_2} onChange={e => set("info_causas_imediatas_tasc_2")(e.target.value)} rows={3} />
+            </div>
           </div>
 
           {/* Causas Básicas TASC - 3 columns with grouped selects */}
           <div className="grid grid-cols-3 gap-3">
-            <GroupedCausasBasicasSelect label="Causas Básicas (TASC)" value={form.causas_basicas_tasc} onChange={set("causas_basicas_tasc")} />
-            <GroupedCausasBasicasSelect label="Causas Básicas (TASC) 1" value={form.causas_basicas_tasc_1} onChange={set("causas_basicas_tasc_1")} />
-            <GroupedCausasBasicasSelect label="Causas Básicas (TASC) 2" value={form.causas_basicas_tasc_2} onChange={set("causas_basicas_tasc_2")} />
+            <GroupedCausasBasicasSelect label="Causas Básicas (TASC) 1" value={form.causas_basicas_tasc} onChange={set("causas_basicas_tasc")} />
+            <GroupedCausasBasicasSelect label="Causas Básicas (TASC) 2" value={form.causas_basicas_tasc_1} onChange={set("causas_basicas_tasc_1")} />
+            <GroupedCausasBasicasSelect label="Causas Básicas (TASC) 3" value={form.causas_basicas_tasc_2} onChange={set("causas_basicas_tasc_2")} />
+          </div>
+
+          {/* Informações sobre Causas Básicas TASC - 3 columns */}
+          <div className="grid grid-cols-3 gap-3 mt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="info_causas_basicas_1">Informações sobre Causa Básica (TASC) 1</Label>
+              <Textarea id="info_causas_basicas_1" value={form.causas_basicas_tasc} onChange={e => set("info_causas_basicas_tasc")(e.target.value)} rows={3} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="info_causas_basicas_2">Informações sobre Causa Básica (TASC) 2</Label>
+              <Textarea id="info_causas_basicas_2" value={form.causas_basicas_tasc_1} onChange={e => set("info_causas_basicas_tasc_1")(e.target.value)} rows={3} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="info_causas_basicas_3">Informações sobre Causa Básica (TASC) 3</Label>
+              <Textarea id="info_causas_basicas_3" value={form.causas_basicas_tasc_2} onChange={e => set("info_causas_basicas_tasc_2")(e.target.value)} rows={3} />
+            </div>
           </div>
 
           {/* Responsáveis e Status */}

@@ -33,8 +33,8 @@ export const ETAPAS_CONFIG = [
   { key: "etapa2_data" as const, respKey: "responsavel_etapa2" as const, label: "2) Envio torpedo WhatsApp ao SESMT EQTL", prazoHoras: null },
   { key: "etapa3_data" as const, respKey: "responsavel_etapa3" as const, label: "3) Envio torpedo WhatsApp ao SESMT e Gerência CGB", prazoHoras: null },
   { key: "etapa4_data" as const, respKey: "responsavel_etapa4" as const, label: "4) Envio Comunicação de Acidente (formulário EQTL) ao SESMT EQTL", prazoHoras: 24 },
-  { key: "etapa5_data" as const, respKey: "responsavel_etapa5" as const, label: "5) Análise do Evento (CAUSAS, metodologia TASC)", prazoHoras: 72 },
-  { key: "etapa6_data" as const, respKey: "responsavel_etapa6" as const, label: "6) Abertura da CAT", prazoHoras: 24 },
+  { key: "etapa6_data" as const, respKey: "responsavel_etapa6" as const, label: "5) Abertura da CAT", prazoHoras: 24 },
+  { key: "etapa5_data" as const, respKey: "responsavel_etapa5" as const, label: "6) Análise do Evento (CAUSAS, metodologia TASC)", prazoHoras: 72 },
   { key: "etapa7_data" as const, respKey: "responsavel_etapa7" as const, label: "7) Preenchimento do Plano de Ação para cada CAUSA APONTADA", prazoHoras: null },
   { key: "etapa8_data" as const, respKey: "responsavel_etapa8" as const, label: "8) Envio do Quadrante ao SESMT EQTL via e-mail", prazoHoras: 120 },
   { key: "etapa9_data" as const, respKey: "responsavel_etapa9" as const, label: "9) Envio do RELATÓRIO ao SESMT EQTL, SESMT CGB, GUADIX via e-mail", prazoHoras: null },
@@ -60,7 +60,7 @@ export function useCreateEtapa() {
     mutationFn: async (etapa: { acidente_id: string; responsavel_nome: string }) => {
       const { data, error } = await supabase
         .from("etapas_investigacao")
-        .insert(etapa as any)
+        .insert(etapa)
         .select()
         .single();
       if (error) throw error;
@@ -77,7 +77,7 @@ export function useUpdateEtapa() {
     mutationFn: async ({ id, ...updates }: Partial<EtapaInvestigacao> & { id: string }) => {
       const { error } = await supabase
         .from("etapas_investigacao")
-        .update(updates as any)
+        .update(updates as Partial<EtapaInvestigacao>)
         .eq("id", id);
       if (error) throw error;
     },

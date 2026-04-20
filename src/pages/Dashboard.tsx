@@ -4,7 +4,9 @@ import { AlertTriangle, Calendar, TrendingUp, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
 import { useAcidentes } from "@/hooks/use-acidentes";
 import { useEtapas, ETAPAS_CONFIG } from "@/hooks/use-etapas";
+import { useAcoes } from "@/hooks/use-acoes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDate } from "@/lib/utils";
 
 import ComparativePyramid from "@/components/ComparativePyramid";
 import DashboardFilters, { DashboardFilterValues } from "@/components/DashboardFilters";
@@ -32,6 +34,7 @@ const CONTRATO_COLORS = [
 export default function Dashboard() {
   const { data: allAcidentes = [], isLoading } = useAcidentes();
   const { data: etapas = [], isLoading: isLoadingEtapas } = useEtapas();
+  const { data: acoes = [], isLoading: isLoadingAcoes } = useAcoes();
   const currentYear = new Date().getFullYear();
   const [filters, setFilters] = useState<DashboardFilterValues>({
     ano: String(currentYear), mes: "all", contrato: "all", rateio: "all", tipo: "all",
@@ -54,16 +57,21 @@ export default function Dashboard() {
 
   const etapaLabelPorAcidente = useMemo(() => {
     const map: Record<string, string> = {};
+    const totalEtapas = ETAPAS_CONFIG.length;
+    const mapNumero: Record<string, string> = {};
     etapas.forEach(etapa => {
       let ultimaEtapaLabel = "Não iniciada";
-      ETAPAS_CONFIG.forEach(cfg => {
+      let ultimaEtapaNumero = 0;
+      ETAPAS_CONFIG.forEach((cfg, index) => {
         if (etapa[cfg.key]) {
           ultimaEtapaLabel = cfg.label;
+          ultimaEtapaNumero = index + 1;
         }
       });
       map[etapa.acidente_id] = ultimaEtapaLabel;
+      mapNumero[etapa.acidente_id] = `${ultimaEtapaNumero}/${totalEtapas}`;
     });
-    return map;
+    return { map, mapNumero };
   }, [etapas]);
 
   const totalAcidentes = acidentes.length;
@@ -109,6 +117,37 @@ export default function Dashboard() {
     }));
   }, [acidentes]);
 
+  const situacaoAtualAcoes = useMemo(() => {
+    const acidentesIds = new Set(acidentes.map((a) => a.id));
+    const map: Record<string, number> = {};
+    acoes.forEach((acao) => {
+      if (!acidentesIds.has(acao.acidente_id)) return;
+      const situacao = acao.situacao_atual || "Não informada";
+      map[situacao] = (map[situacao] || 0) + 1;
+    });
+    return Object.entries(map).map(([situacao, total], index) => ({
+      situacao,
+      total,
+      fill: PIE_COLORS[index % PIE_COLORS.length],
+    }));
+  }, [acoes, acidentes]);
+
+  const situacaoAtualAcoesPorAcidente = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    acoes.forEach((acao) => {
+      if (!map.has(acao.acidente_id)) {
+        map.set(acao.acidente_id, new Set());
+      }
+      map.get(acao.acidente_id)!.add(acao.situacao_atual || "Não informada");
+    });
+
+    const result: Record<string, string> = {};
+    map.forEach((situacoes, acidenteId) => {
+      result[acidenteId] = Array.from(situacoes).join(", ");
+    });
+    return result;
+  }, [acoes]);
+
   const anoAtual = filters.ano !== "all" ? Number(filters.ano) : currentYear;
   const anoAnterior = anoAtual - 1;
 
@@ -126,7 +165,7 @@ export default function Dashboard() {
     );
   }
 
-  if (isLoading || isLoadingEtapas) {
+  if (isLoading || isLoadingEtapas || isLoadingAcoes) {
     return (
       <div className="flex items-center justify-center py-24">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -257,6 +296,7 @@ export default function Dashboard() {
               <YAxis dataKey="contrato" type="category" fontSize={12} width={120} />
               <Tooltip />
               <Bar dataKey="total" radius={[0, 4, 4, 0]}>
+                <LabelList dataKey="total" position="right" fill="#000000" />
                 {acidentesPorContrato.map((entry, index) => <Cell key={index} fill={entry.fill} />)}
               </Bar>
             </BarChart>
@@ -268,7 +308,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader><CardTitle className="text-base">Trânsito Responsabilidades (NP077)</CardTitle></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie
                   data={transitoResponsabilidades}
@@ -276,8 +316,8 @@ export default function Dashboard() {
                   nameKey="responsabilidade"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
-                  innerRadius={50}
+                  outerRadius={78}
+                  innerRadius={38}
                   paddingAngle={2}
                   labelLine={false}
                 >
@@ -301,6 +341,43 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {situacaoAtualAcoes.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Situação Atual das Ações</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie
+                  data={situacaoAtualAcoes}
+                  dataKey="total"
+                  nameKey="situacao"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={78}
+                  innerRadius={38}
+                  paddingAngle={2}
+                  labelLine={false}
+                >
+                  {situacaoAtualAcoes.map((entry) => <Cell key={entry.situacao} fill={entry.fill} />)}
+                  <LabelList dataKey="total" position="inside" fill="#fff" style={{ fontSize: 12, fontWeight: 600 }} />
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+          <CardFooter className="pt-0">
+            <div className="grid gap-2 mt-2">
+              {situacaoAtualAcoes.map(entry => (
+                <div key={entry.situacao} className="flex items-center gap-2 text-sm text-foreground">
+                  <span className="inline-block h-3 w-3 rounded-sm" style={{ backgroundColor: entry.fill }} />
+                  <span>{entry.situacao}</span>
+                </div>
+              ))}
+            </div>
+          </CardFooter>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Status das Etapas por Colaborador</CardTitle>
@@ -311,10 +388,13 @@ export default function Dashboard() {
               <TableRow>
                 <TableHead>Chapa</TableHead>
                 <TableHead>Nome</TableHead>
+                <TableHead>Data do Acidente</TableHead>
                 <TableHead>Tipologia do Acidente</TableHead>
                 <TableHead>Contrato</TableHead>
                 <TableHead>Rateio</TableHead>
+                <TableHead>N°</TableHead>
                 <TableHead>Etapa da Investigação</TableHead>
+                <TableHead>Situação Atual das Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -322,10 +402,13 @@ export default function Dashboard() {
                 <TableRow key={a.id}>
                   <TableCell className="font-mono">{a.chapa}</TableCell>
                   <TableCell>{a.nome}</TableCell>
+                  <TableCell className="whitespace-nowrap">{formatDate(a.data)}</TableCell>
                   <TableCell>{a.tipologia_acidente || "-"}</TableCell>
                   <TableCell>{a.contrato || "-"}</TableCell>
                   <TableCell>{a.rateio || "-"}</TableCell>
-                  <TableCell>{etapaLabelPorAcidente[a.id] || "Não iniciada"}</TableCell>
+                  <TableCell>{etapaLabelPorAcidente.mapNumero[a.id] || `0/${ETAPAS_CONFIG.length}`}</TableCell>
+                  <TableCell>{etapaLabelPorAcidente.map[a.id] || "Não iniciada"}</TableCell>
+                  <TableCell>{situacaoAtualAcoesPorAcidente[a.id] || "-"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -16,10 +16,10 @@ export default function PyramidChart({ acidentes }: PyramidChartProps) {
   }, [acidentes]);
 
   const layers = [
-    { label: "FATAL", value: stats.fatal, color: "hsl(0, 65%, 50%)", width: "20%" },
-    { label: "CAF", value: stats.caf, color: "hsl(25, 85%, 55%)", width: "40%" },
-    { label: "SAF", value: stats.saf, color: "hsl(145, 55%, 48%)", width: "60%" },
-    { label: "1º SOCORROS", value: stats.primeirosSocorros, color: "hsl(48, 90%, 55%)", width: "80%" },
+    { label: "FATAL", value: stats.fatal, color: "hsl(0, 65%, 50%)", width: `${Math.max(stats.fatal / Math.max(stats.total, 1) * 100, 5)}%` },
+    { label: "CAF", value: stats.caf, color: "hsl(25, 85%, 55%)", width: `${Math.max(stats.caf / Math.max(stats.total, 1) * 100, 5)}%` },
+    { label: "SAF", value: stats.saf, color: "hsl(145, 55%, 48%)", width: `${Math.max(stats.saf / Math.max(stats.total, 1) * 100, 5)}%` },
+    { label: "1º SOCORROS", value: stats.primeirosSocorros, color: "hsl(48, 90%, 55%)", width: `${Math.max(stats.primeirosSocorros / Math.max(stats.total, 1) * 100, 5)}%` },
     { label: "TOTAL", value: stats.total, color: "hsl(210, 65%, 50%)", width: "100%" },
   ];
 

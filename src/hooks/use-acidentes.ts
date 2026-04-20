@@ -60,7 +60,7 @@ export interface Acidente {
 
 export type AcidenteInput = Omit<Acidente, "id" | "created_at" | "situacao">;
 
-async function logAudit(acidenteId: string, action: string, changes: Record<string, any> = {}) {
+async function logAudit(acidenteId: string, action: string, changes: Record<string, unknown> = {}) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
@@ -70,7 +70,7 @@ async function logAudit(acidenteId: string, action: string, changes: Record<stri
         user_email: user.email || "",
         action,
         changes,
-      } as any);
+      } as Record<string, unknown>);
     }
   } catch (e) {
     console.error("Audit log error:", e);
@@ -95,7 +95,7 @@ function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
   if (error && typeof error === "object" && "message" in error) {
-    return String((error as any).message);
+    return String((error as Record<string, unknown>).message);
   }
   return fallback;
 }
@@ -117,7 +117,8 @@ export function useCreateAcidente() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (a: AcidenteInput) => {
-      const { data, error } = await supabase.from("acidentes").insert({ ...a, situacao: "Ativo" } as any).select().single();
+      const dataToInsert = { ...a, nome_empresa: "CGB", situacao: "Ativo" } as Omit<Acidente, "id" | "created_at">;
+      const { data, error } = await supabase.from("acidentes").insert(dataToInsert).select().single();
       if (error) throw error;
       await logAudit(data.id, "create");
       return data;
@@ -131,9 +132,9 @@ export function useUpdateAcidente() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...a }: AcidenteInput & { id: string }) => {
-      const { data, error } = await supabase.from("acidentes").update(a as any).eq("id", id).select().single();
+      const { data, error } = await supabase.from("acidentes").update(a as Partial<Acidente>).eq("id", id).select().single();
       if (error) throw error;
-      await logAudit(id, "update", a);
+      await logAudit(id, "update", a as Record<string, unknown>);
       return data;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["acidentes"] }); toast.success("Atualizado!"); },
@@ -145,8 +146,8 @@ export function useBulkCreateAcidentes() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (acidentes: AcidenteInput[]) => {
-      const rows = acidentes.map(a => ({ ...a, situacao: "Ativo" }));
-      const { data, error } = await supabase.from("acidentes").insert(rows as any).select();
+      const rows = acidentes.map(a => ({ ...a, situacao: "Ativo" } as Omit<Acidente, "id" | "created_at">));
+      const { data, error } = await supabase.from("acidentes").insert(rows).select();
       if (error) throw error;
       return data;
     },
