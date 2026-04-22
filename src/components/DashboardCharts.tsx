@@ -120,7 +120,7 @@ export default function DashboardCharts({ acidentes }: Props) {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Status Atual dos Acidentes</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Status Atual do Acidentado</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>

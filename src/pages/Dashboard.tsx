@@ -152,6 +152,36 @@ export default function Dashboard() {
     return result;
   }, [acoes]);
 
+  const dadosAcoesPorAcidente = useMemo(() => {
+    const acoesMap = new Map<string, Set<string>>();
+    const dataPrevistaMap = new Map<string, Set<string>>();
+    const dataRealizadaMap = new Map<string, Set<string>>();
+
+    acoes.forEach((acao) => {
+      if (!acoesMap.has(acao.acidente_id)) acoesMap.set(acao.acidente_id, new Set());
+      if (!dataPrevistaMap.has(acao.acidente_id)) dataPrevistaMap.set(acao.acidente_id, new Set());
+      if (!dataRealizadaMap.has(acao.acidente_id)) dataRealizadaMap.set(acao.acidente_id, new Set());
+
+      if (acao.acao?.trim()) acoesMap.get(acao.acidente_id)!.add(acao.acao.trim());
+      if (acao.data_prevista_execucao) dataPrevistaMap.get(acao.acidente_id)!.add(formatDate(acao.data_prevista_execucao));
+      if (acao.data_realizada_execucao) dataRealizadaMap.get(acao.acidente_id)!.add(formatDate(acao.data_realizada_execucao));
+    });
+
+    const toRecord = (map: Map<string, Set<string>>) => {
+      const result: Record<string, string> = {};
+      map.forEach((values, acidenteId) => {
+        result[acidenteId] = Array.from(values).join(" | ");
+      });
+      return result;
+    };
+
+    return {
+      acoes: toRecord(acoesMap),
+      dataPrevista: toRecord(dataPrevistaMap),
+      dataRealizada: toRecord(dataRealizadaMap),
+    };
+  }, [acoes]);
+
   const etapasInvestigacaoData = useMemo(() => {
     const map: Record<string, number> = {};
     acidentes.forEach((acidente) => {
@@ -437,6 +467,9 @@ export default function Dashboard() {
                 <TableHead>N°</TableHead>
                 <TableHead>Etapa da Investigação</TableHead>
                 <TableHead>Situação Atual das Ações</TableHead>
+                <TableHead>Ação</TableHead>
+                <TableHead>Data Prevista</TableHead>
+                <TableHead>Data Realizada</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -451,6 +484,9 @@ export default function Dashboard() {
                   <TableCell>{etapaLabelPorAcidente.mapNumero[a.id] || `0/${ETAPAS_CONFIG.length}`}</TableCell>
                   <TableCell>{etapaLabelPorAcidente.map[a.id] || "Não iniciada"}</TableCell>
                   <TableCell>{situacaoAtualAcoesPorAcidente[a.id] || "-"}</TableCell>
+                  <TableCell className="max-w-[300px] whitespace-pre-wrap text-xs">{dadosAcoesPorAcidente.acoes[a.id] || "-"}</TableCell>
+                  <TableCell className="max-w-[150px] whitespace-pre-wrap text-xs">{dadosAcoesPorAcidente.dataPrevista[a.id] || "-"}</TableCell>
+                  <TableCell className="max-w-[150px] whitespace-pre-wrap text-xs">{dadosAcoesPorAcidente.dataRealizada[a.id] || "-"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

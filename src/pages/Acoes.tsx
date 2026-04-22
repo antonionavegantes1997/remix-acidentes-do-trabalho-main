@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAcidentes, Acidente } from "@/hooks/use-acidentes";
 import { useAcoes, useAcoesAnexos, useUpdateAcao, useCreateAcao, useUploadAnexo, useDeleteAnexo, Acao } from "@/hooks/use-acoes";
@@ -13,6 +14,7 @@ import DashboardFilters, { DashboardFilterValues } from "@/components/DashboardF
 import AcidenteFormDialog from "@/components/AcidenteFormDialog";
 import { useUpdateAcidente, AcidenteInput } from "@/hooks/use-acidentes";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const SITUACAO_OPTIONS = ["Aguardando análise", "Em andamento", "Concluída", "Cancelada"];
 const TIPO_ACAO_OPTIONS = ["Sim", "Não"];
@@ -251,6 +253,7 @@ function AcaoRow({
   onEditAcidente: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [acaoText, setAcaoText] = useState(acao.acao);
   const [corretivaValue, setCorretivaValue] = useState(acao.corretiva || "Não");
   const [preventivaValue, setPreventivaValue] = useState(acao.preventiva || "Não");
@@ -285,9 +288,21 @@ function AcaoRow({
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const getPublicUrl = (path: string) => {
-    const { data } = supabase.storage.from("acoes-anexos").getPublicUrl(path);
-    return data.publicUrl;
+  const openAttachment = async (path: string) => {
+    try {
+      const cached = signedUrls[path];
+      if (cached) {
+        window.open(cached, "_blank", "noopener,noreferrer");
+        return;
+      }
+      const { data, error } = await supabase.storage.from("acoes-anexos").createSignedUrl(path, 60);
+      if (error || !data?.signedUrl) throw error || new Error("Falha ao gerar link assinado.");
+      setSignedUrls((prev) => ({ ...prev, [path]: data.signedUrl }));
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Erro ao abrir anexo.";
+      toast.error(msg);
+    }
   };
 
   return (
@@ -302,8 +317,8 @@ function AcaoRow({
       <TableCell className="text-xs font-semibold">{row.causaTipo}</TableCell>
       <TableCell className="max-w-[200px] text-xs">{row.causaDescricao}</TableCell>
       <TableCell>
-        <Input
-          className="min-w-[120px]"
+        <Textarea
+          className="min-w-[220px] min-h-[88px] resize-y"
           value={acaoText}
           readOnly={!canEdit}
           onBlur={e => handleField("acao", e.target.value)}
@@ -388,9 +403,13 @@ function AcaoRow({
         <div className="flex flex-col gap-1">
           {anexos.map(an => (
             <div key={an.id} className="flex items-center gap-1 text-xs">
-              <a href={getPublicUrl(an.file_path)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => void openAttachment(an.file_path)}
+                className="text-primary hover:underline flex items-center gap-0.5"
+              >
                 <Paperclip className="h-3 w-3" /> {an.file_name.length > 15 ? an.file_name.slice(0, 15) + "..." : an.file_name}
-              </a>
+              </button>
               <button type="button" disabled={!canEdit} onClick={() => onDeleteAnexo(an)} className="text-destructive hover:text-destructive/80 disabled:opacity-40">
                 <Trash2 className="h-3 w-3" />
               </button>

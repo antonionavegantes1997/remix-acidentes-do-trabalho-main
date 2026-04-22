@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  const isAdmin = role === "admin" || role === "gestor";
+  const isAdmin = role === "admin";
   const canEdit = role === "admin" || role === "gestor";
 
   return (

@@ -62,9 +62,15 @@ export default function Configuracoes() {
   };
 
   const fetchData = async () => {
+    if (!isAdmin) {
+      setRows([]);
+      setAuditLog([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const { data: portal, error: e1 } = await supabase.rpc("list_portal_users_with_email");
+      const { data: portal, error: e1 } = await (supabase.rpc as any)("list_portal_users_with_email");
       if (e1) throw e1;
       setRows((portal || []) as PortalUserRow[]);
 
@@ -85,7 +91,7 @@ export default function Configuracoes() {
 
   useEffect(() => {
     void fetchData();
-  }, []);
+  }, [isAdmin]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -99,6 +105,10 @@ export default function Configuracoes() {
   }, [rows, search]);
 
   const handleDeleteRole = async (roleId: string) => {
+    if (!isAdmin) {
+      toast.error("Apenas administradores podem remover permissões.");
+      return;
+    }
     const { error } = await supabase.from("user_roles").delete().eq("id", roleId);
     if (error) toast.error("Erro ao remover permissão.");
     else {
@@ -115,29 +125,26 @@ export default function Configuracoes() {
   };
 
   const handleCreateUser = async () => {
+    if (!isAdmin) {
+      toast.error("Apenas administradores podem criar usuários.");
+      return;
+    }
     if (!newEmail.trim() || newPassword.length < 6) {
       toast.error("Informe e-mail e senha (mínimo 6 caracteres).");
       return;
     }
     setCreating(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: newEmail.trim(),
-        password: newPassword,
-        options: {
-          data: {
-            full_name: newName.trim(),
-            name: newName.trim(),
-          }
-        }
+      const { data, error } = await supabase.functions.invoke("create-portal-user", {
+        body: {
+          email: newEmail.trim(),
+          password: newPassword,
+          full_name: newName.trim(),
+          role: newRole,
+        },
       });
       if (error) throw error;
-      if (!data.user) throw new Error("Falha ao criar usuário.");
-      const { error: insertError } = await supabase.from("user_roles").insert({
-        user_id: data.user.id,
-        role: newRole,
-      });
-      if (insertError) throw insertError;
+      if (!data?.ok) throw new Error(data?.error || "Falha ao criar usuário.");
       toast.success("Usuário criado com sucesso.");
       setDialogOpen(false);
       setNewEmail("");
@@ -153,6 +160,17 @@ export default function Configuracoes() {
     }
   };
 
+  if (!isAdmin) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
+          <p className="text-sm text-muted-foreground">Acesso restrito a administradores.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -161,7 +179,6 @@ export default function Configuracoes() {
           <p className="text-sm text-muted-foreground">Usuários do portal e histórico do sistema</p>
         </div>
         
-        {/* BOTÃO LIBERADO PARA TODOS */}
         <Button type="button" className="gap-1 shrink-0 w-full sm:w-auto" onClick={() => setDialogOpen(true)}>
           <Plus className="h-4 w-4" /> Novo usuário
         </Button>

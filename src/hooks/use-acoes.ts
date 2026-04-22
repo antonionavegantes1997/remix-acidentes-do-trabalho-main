@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const ALLOWED_FILE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
 function isMissingDataRealizadaColumn(error: unknown) {
   const message = (error as { message?: string; details?: string; hint?: string } | null)?.message ?? "";
   const details = (error as { details?: string } | null)?.details ?? "";
@@ -114,7 +117,15 @@ export function useUploadAnexo() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ acaoId, file }: { acaoId: string; file: File }) => {
-      const filePath = `${acaoId}/${Date.now()}_${file.name}`;
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new Error("Arquivo acima do limite de 5MB.");
+      }
+      if (!ALLOWED_FILE_TYPES.has(file.type)) {
+        throw new Error("Tipo de arquivo não permitido. Use JPG, PNG, WEBP ou PDF.");
+      }
+
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `${acaoId}/${Date.now()}_${safeName}`;
       const { error: uploadError } = await supabase.storage.from("acoes-anexos").upload(filePath, file);
       if (uploadError) throw uploadError;
       const { error: dbError } = await supabase.from("acoes_anexos").insert({
@@ -126,7 +137,7 @@ export function useUploadAnexo() {
       if (dbError) throw dbError;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["acoes_anexos"] }); toast.success("Arquivo anexado!"); },
-    onError: () => toast.error("Erro ao anexar arquivo."),
+    onError: (error: unknown) => toast.error((error as Error)?.message ?? "Erro ao anexar arquivo."),
   });
 }
 

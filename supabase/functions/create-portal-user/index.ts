@@ -2,11 +2,20 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") ?? "",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
+  const allowedOrigin = Deno.env.get("APP_ORIGIN") ?? "";
+  const requestOrigin = req.headers.get("origin") ?? "";
+  if (!allowedOrigin || requestOrigin !== allowedOrigin) {
+    return new Response(JSON.stringify({ error: "Origin não permitida." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -46,8 +55,8 @@ serve(async (req) => {
       .eq("user_id", user.id);
 
     if (roleErr) throw roleErr;
-    const isAdminOrGestor = (adminRoles ?? []).some((r: { role: string }) => r.role === "admin" || r.role === "gestor");
-    if (!isAdminOrGestor) {
+    const isAdmin = (adminRoles ?? []).some((r: { role: string }) => r.role === "admin");
+    if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -59,8 +68,9 @@ serve(async (req) => {
     const password = String(body.password ?? "");
     const full_name = String(body.full_name ?? "").trim();
     const role = body.role as "admin" | "gestor";
-    if (!email || !password || password.length < 6) {
-      return new Response(JSON.stringify({ error: "E-mail e senha (mín. 6 caracteres) são obrigatórios." }), {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email) || !password || password.length < 10) {
+      return new Response(JSON.stringify({ error: "E-mail válido e senha (mín. 10 caracteres) são obrigatórios." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
