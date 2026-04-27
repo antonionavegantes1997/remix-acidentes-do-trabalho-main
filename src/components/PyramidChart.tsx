@@ -9,9 +9,22 @@ export default function PyramidChart({ acidentes }: PyramidChartProps) {
   const stats = useMemo(() => {
     const total = acidentes.length;
     const fatal = acidentes.filter(a => a.tipologia_acidente === "ACIDENTE FATAL").length;
-    const caf = acidentes.filter(a => a.afastamento === "COM AFASTAMENTO" && a.tipologia_acidente !== "ACIDENTE FATAL").length;
-    const saf = acidentes.filter(a => a.afastamento !== "COM AFASTAMENTO" && a.tipologia_acidente !== "ACIDENTE FATAL" && a.tipologia_acidente !== "ACIDENTE ATIPICO - PRIMEIROS SOCORROS").length;
-    const primeirosSocorros = acidentes.filter(a => a.tipologia_acidente === "ACIDENTE ATIPICO - PRIMEIROS SOCORROS").length;
+    
+    // CAF: Qualquer acidente (não fatal) com 1 ou mais dias perdidos
+    const caf = acidentes.filter(a => 
+      a.tipologia_acidente !== "ACIDENTE FATAL" && 
+      Number(a.dias_perdidos || 0) > 0
+    ).length;
+    
+    // SAF: Somente "ACIDENTE TIPICO" com zero dias perdidos
+    const saf = acidentes.filter(a => 
+      a.tipologia_acidente === "ACIDENTE TIPICO" && 
+      Number(a.dias_perdidos || 0) === 0
+    ).length;
+
+    // 1º Socorros: O restante dos acidentes (Total - Fatal - CAF - SAF)
+    const primeirosSocorros = total - fatal - caf - saf;
+
     return { total, fatal, caf, saf, primeirosSocorros };
   }, [acidentes]);
 

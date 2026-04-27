@@ -132,6 +132,34 @@ export default function Acoes() {
     }
   };
 
+  // Função para consolidar o status do acidente baseado em todas as suas ações
+  const handleUpdateAcaoWithSync = (acaoData: any) => {
+    updateAcao.mutate(acaoData, {
+      onSuccess: (updatedAcao) => {
+        // Criar uma lista temporária de ações que reflita a última alteração
+        // Isso é crucial porque a variável de estado 'acoes' pode não ser atualizada imediatamente
+        const tempAcoesList = acoes.map(a =>
+          a.id === updatedAcao.id ? { ...a, ...acaoData } : a
+        );
+
+        // Filtrar ações pertencentes ao mesmo acidente desta lista temporária
+        const acoesDoAcidente = tempAcoesList.filter(a => a.acidente_id === updatedAcao.acidente_id);
+        
+        // A regra: Só é concluída se TODAS forem "Concluída" ou "Cancelada"
+        const todasConcluidas = acoesDoAcidente.every(a => {
+          return a.situacao_atual === "Concluída" || a.situacao_atual === "Cancelada";
+        });
+
+        const novoStatusGlobal = todasConcluidas ? "Concluída" : "Em andamento";
+        
+        const currentAcidente = allAcidentes.find(a => a.id === updatedAcao.acidente_id);
+        if (!currentAcidente || currentAcidente.situacao !== novoStatusGlobal) {
+            updateAcidente.mutate({ id: updatedAcao.acidente_id, situacao: novoStatusGlobal } as any);
+        }
+      }
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -199,7 +227,7 @@ export default function Acoes() {
                       acao={acao}
                       anexos={rowAnexos}
                       canEdit={canEdit}
-                      onUpdate={updateAcao.mutate}
+                      onUpdate={handleUpdateAcaoWithSync}
                       onUpload={uploadAnexo.mutate}
                       onDeleteAnexo={deleteAnexo.mutate}
                       onEditAcidente={() => handleEditAcidente(row.acidente)}

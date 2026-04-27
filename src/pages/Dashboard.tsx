@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Calendar, TrendingUp, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
-import { useAcidentes } from "@/hooks/use-acidentes";
+import { useAcidentes, Acidente } from "@/hooks/use-acidentes";
 import { useEtapas, ETAPAS_CONFIG } from "@/hooks/use-etapas";
 import { useAcoes } from "@/hooks/use-acoes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,6 +30,17 @@ const CONTRATO_COLORS = [
   "hsl(145, 63%, 42%)", "hsl(280, 60%, 50%)", "hsl(330, 70%, 50%)",
   "hsl(180, 60%, 40%)", "hsl(60, 80%, 45%)",
 ];
+
+function getCausasAtuais(acidente: Acidente) {
+  const causes: { tipo: string; desc: string }[] = [];
+  if (acidente.causas_imediatas_tasc) causes.push({ tipo: "Causa Imediata", desc: acidente.causas_imediatas_tasc });
+  if (acidente.causas_imediatas_tasc_1) causes.push({ tipo: "Causa Imediata 1", desc: acidente.causas_imediatas_tasc_1 });
+  if (acidente.causas_imediatas_tasc_2) causes.push({ tipo: "Causa Imediata 2", desc: acidente.causas_imediatas_tasc_2 });
+  if (acidente.causas_basicas_tasc) causes.push({ tipo: "Causa Básica", desc: acidente.causas_basicas_tasc });
+  if (acidente.causas_basicas_tasc_1) causes.push({ tipo: "Causa Básica 1", desc: acidente.causas_basicas_tasc_1 });
+  if (acidente.causas_basicas_tasc_2) causes.push({ tipo: "Causa Básica 2", desc: acidente.causas_basicas_tasc_2 });
+  return causes;
+}
 
 export default function Dashboard() {
   const { data: allAcidentes = [], isLoading } = useAcidentes();
@@ -137,20 +148,60 @@ export default function Dashboard() {
   }, [acoes, acidentes]);
 
   const situacaoAtualAcoesPorAcidente = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    acoes.forEach((acao) => {
-      if (!map.has(acao.acidente_id)) {
-        map.set(acao.acidente_id, new Set());
+    const result: Record<string, string> = {};
+
+    allAcidentes.forEach((acidente) => {
+      const causasAtuais = getCausasAtuais(acidente);
+      if (causasAtuais.length === 0) {
+        result[acidente.id] = "-";
+        return;
       }
-      map.get(acao.acidente_id)!.add(acao.situacao_atual || "Não informada");
+
+      const acoesDoAcidente = acoes.filter(
+        (acao) => acao.acidente_id === acidente.id
+      );
+
+      // Considera apenas ações que correspondem às causas atualmente preenchidas no acidente.
+      // Ações órfãs (causas removidas posteriormente) são ignoradas.
+      const acoesRelevantes = acoesDoAcidente.filter((acao) =>
+        causasAtuais.some(
+          (c) => c.tipo === acao.causa_tipo && c.desc === acao.causa_descricao
+        )
+      );
+
+      if (acoesRelevantes.length === 0) {
+        result[acidente.id] = "-";
+        return;
+      }
+
+      const situacoes = acoesRelevantes.map(
+        (acao) => acao.situacao_atual || "Não informada"
+      );
+
+      // Regra de consolidação:
+      // - Se TODAS forem "Concluída" ou "Cancelada" → "Concluída"
+      // - Se houver pelo menos uma "Em andamento" → "Em andamento"
+      // - Se houver "Aguardando análise" e nenhuma "Em andamento" → "Aguardando análise"
+      const todasConcluidas = situacoes.every(
+        (s) => s === "Concluída" || s === "Cancelada"
+      );
+      if (todasConcluidas) {
+        result[acidente.id] = "Concluída";
+        return;
+      }
+      if (situacoes.some((s) => s === "Em andamento")) {
+        result[acidente.id] = "Em andamento";
+        return;
+      }
+      if (situacoes.some((s) => s === "Aguardando análise")) {
+        result[acidente.id] = "Aguardando análise";
+        return;
+      }
+      result[acidente.id] = situacoes[0];
     });
 
-    const result: Record<string, string> = {};
-    map.forEach((situacoes, acidenteId) => {
-      result[acidenteId] = Array.from(situacoes).join(", ");
-    });
     return result;
-  }, [acoes]);
+  }, [acoes, allAcidentes]);
 
   const dadosAcoesPorAcidente = useMemo(() => {
     const acoesMap = new Map<string, Set<string>>();
