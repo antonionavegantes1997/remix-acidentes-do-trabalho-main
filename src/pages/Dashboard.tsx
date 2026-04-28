@@ -48,7 +48,7 @@ export default function Dashboard() {
   const { data: acoes = [], isLoading: isLoadingAcoes } = useAcoes();
   const currentYear = new Date().getFullYear();
   const [filters, setFilters] = useState<DashboardFilterValues>({
-    ano: "all", mes: "all", contrato: "all", rateio: "all", tipo: "all",
+    ano: "all", mes: "all", contrato: "all", rateio: "all", tipo: "all", estado: "all",
     chapa: "", colaborador: "",
   });
 
@@ -61,6 +61,7 @@ export default function Dashboard() {
       if (filters.contrato !== "all" && a.contrato !== filters.contrato) return false;
       if (filters.rateio !== "all" && a.rateio !== filters.rateio) return false;
       if (filters.tipo !== "all" && a.tipologia_acidente !== filters.tipo) return false;
+      if (filters.estado !== "all" && a.estado !== filters.estado) return false;
       if (filters.chapa && !String(a.chapa).toLowerCase().includes(filters.chapa.toLowerCase().trim())) return false;
       if (filters.colaborador && !a.nome.toLowerCase().includes(filters.colaborador.toLowerCase().trim())) return false;
       return true;
@@ -152,22 +153,24 @@ export default function Dashboard() {
 
     allAcidentes.forEach((acidente) => {
       const causasAtuais = getCausasAtuais(acidente);
-      if (causasAtuais.length === 0) {
-        result[acidente.id] = "-";
-        return;
-      }
 
       const acoesDoAcidente = acoes.filter(
         (acao) => acao.acidente_id === acidente.id
       );
 
-      // Considera apenas ações que correspondem às causas atualmente preenchidas no acidente.
-      // Ações órfãs (causas removidas posteriormente) são ignoradas.
-      const acoesRelevantes = acoesDoAcidente.filter((acao) =>
-        causasAtuais.some(
-          (c) => c.tipo === acao.causa_tipo && c.desc === acao.causa_descricao
-        )
-      );
+      // Prioriza ações que correspondem às causas atualmente preenchidas.
+      // Se não houver correspondência, usa todas as ações do acidente como fallback.
+      let acoesRelevantes = acoesDoAcidente;
+      if (causasAtuais.length > 0) {
+        const matching = acoesDoAcidente.filter((acao) =>
+          causasAtuais.some(
+            (c) => c.tipo === acao.causa_tipo && c.desc === acao.causa_descricao
+          )
+        );
+        if (matching.length > 0) {
+          acoesRelevantes = matching;
+        }
+      }
 
       if (acoesRelevantes.length === 0) {
         result[acidente.id] = "-";

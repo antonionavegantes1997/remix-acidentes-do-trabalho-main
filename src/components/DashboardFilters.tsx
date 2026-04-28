@@ -10,6 +10,7 @@ export interface DashboardFilterValues {
   contrato: string;
   rateio: string;
   tipo: string;
+  estado: string;
   chapa: string;
   colaborador: string;
 }
@@ -40,6 +41,12 @@ export default function DashboardFilters({ acidentes, filters, onChange }: Dashb
   const rateios = useMemo(() => {
     const set = new Set<string>();
     acidentes.forEach(a => { if (a.rateio) set.add(a.rateio); });
+    return Array.from(set).sort();
+  }, [acidentes]);
+
+  const estados = useMemo(() => {
+    const set = new Set<string>();
+    acidentes.forEach(a => { if (a.estado) set.add(a.estado); });
     return Array.from(set).sort();
   }, [acidentes]);
 
@@ -111,6 +118,18 @@ export default function DashboardFilters({ acidentes, filters, onChange }: Dashb
           <SelectItem value="ACIDENTE ATIPICO - SEM LESAO">Atípico - Sem Lesão</SelectItem>
           <SelectItem value="ACIDENTE ATIPICO - DANOS MATERIAIS">Atípico - Danos Materiais</SelectItem>
           <SelectItem value="ACIDENTE ATIPICO - PRIMEIROS SOCORROS">Atípico - Primeiros Socorros</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select value={filters.estado} onValueChange={v => update("estado", v)}>
+        <SelectTrigger className="w-[150px] h-9 text-xs">
+          <SelectValue placeholder="Estado" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos os estados</SelectItem>
+          {estados.map(e => (
+            <SelectItem key={e} value={e}>{e}</SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
